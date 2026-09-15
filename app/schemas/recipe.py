@@ -5,14 +5,16 @@ from sqlalchemy.orm import Mapped
 
 
 class RecipeCreate(BaseModel):
+
     name: str
     description: str | None = None
-    preparation_time: Mapped[int | None]
-    servings: Mapped[int | None]
+    preparation_time: int | None = None
+    servings: int | None = None
     instructions: str
     source_name: str
     source_url: str
     image_url: str | None = None
+
 
 class RecipeResponse(RecipeCreate):
     id: int

@@ -3,7 +3,7 @@ from app.scraper.http_client import fetch_page
 from app.scraper.panelinha.parser import PanelinhaParser
 
 
-url = "https://panelinha.com.br/receita/calzone-de-escarola-com-queijo"
+url = "xx"
 
 html = fetch_page(url)
 

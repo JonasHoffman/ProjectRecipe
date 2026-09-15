@@ -3,7 +3,7 @@ from app.scraper.http_client import fetch_page
 from app.scraper.tudogostoso.parser import TudoGostosoParser
 
 
-url = "https://www.tudogostoso.com.br/receita/1020-bolo-de-cenoura.html"
+url = "https://www.tudogostoso.com.br/receita/23-bolo-de-cenoura.html"
 
 html = fetch_page(url)
 

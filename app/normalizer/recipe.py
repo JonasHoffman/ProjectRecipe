@@ -1,5 +1,3 @@
-# app/normalizer/recipe.py
-
 import re
 
 
@@ -11,7 +9,6 @@ class RecipeNormalizer:
         source_name: str,
         source_url: str,
     ) -> dict:
-
         return {
             "name": self.normalize_name(data.get("title")),
             "description": data.get("description"),
@@ -54,13 +51,16 @@ class RecipeNormalizer:
         hours = 0
         minutes = 0
 
-        hour_match = re.search(r"(\d+)\s*h(?:ora|oras)?", value)
+        hour_match = re.search(
+            r"(\d+)\s*h(?:ora|oras)?",
+            value,
+        )
 
         if hour_match:
             hours = int(hour_match.group(1))
 
         minute_match = re.search(
-            r"(\d+)\s*(?:m|min|mins|minute|minutos)",
+            r"(\d+)\s*(?:m|min|mins|minute|minutos?)",
             value,
         )
 
@@ -103,7 +103,6 @@ class RecipeNormalizer:
         instructions = []
 
         for group in groups:
-
             group_name = group.get("group")
             items = group.get("items", [])
 
@@ -111,10 +110,31 @@ class RecipeNormalizer:
                 instructions.append(f"{group_name}:")
 
             instructions.extend(items)
-
             instructions.append("")
 
         return "\n".join(instructions).strip()
+
+    def normalize_ingredients(
+        self,
+        groups: list[dict],
+    ) -> list[dict]:
+
+        ingredients = []
+
+        for group in groups:
+            group_name = group.get("group")
+            items = group.get("items", [])
+
+            for item in items:
+                ingredient = self.normalize_ingredient(
+                    item,
+                    group_name,
+                )
+
+                ingredients.append(ingredient)
+
+        return ingredients
+
 
     def normalize_ingredient(
         self,
@@ -124,8 +144,103 @@ class RecipeNormalizer:
 
         value = value.strip()
 
+        optional = bool(
+            re.search(
+                r"\(\s*opcional\s*\)",
+                value,
+                re.IGNORECASE,
+            )
+        )
+
+        value = re.sub(
+            r"\s*\(\s*opcional\s*\)",
+            "",
+            value,
+            flags=re.IGNORECASE,
+        ).strip()
+
+        parenthetical_details = None
+
+        parenthetical_match = re.search(
+            r"(\([^)]*\))$",
+            value,
+        )
+
+        if parenthetical_match:
+            parenthetical_details = parenthetical_match.group(1)
+            value = value[:parenthetical_match.start()].strip()
+
+        # Pattern:
+        # quantity + compound unit + "de" + ingredient
+        #
+        # Example:
+        # 1 xícara de chá de açúcar
+        #
+        # Result:
+        # quantity = 1
+        # unit = xícara de chá
+        # name = açúcar
         match = re.match(
-            r"^([\d]+(?:[.,/]\d+)?(?:\s+\w+)?)\s+de\s+(.+)$",
+            r"^(\d+(?:\s+e\s+\d+/\d+)?|\d+/\d+|\d+(?:[.,]\d+)?)\s+(.+?\s+de\s+\w+)\s+de\s+(.+)$",
+            value,
+            re.IGNORECASE,
+        )
+
+        if match:
+            quantity = match.group(1)
+            unit = match.group(2)
+            name = match.group(3)
+
+            return {
+                "name": name.strip(),
+                "quantity": quantity.strip(),
+                "unit": unit.strip(),
+                "details": None,
+                "group": group,
+                "optional": optional,
+                "details": parenthetical_details,
+            }
+
+        # Pattern:
+        # quantity + unit + "de" + ingredient
+        #
+        # Examples:
+        # 1/2 xícara (chá) de óleo
+        # 2 xícaras de farinha de trigo
+        # 1 colher (sopa) de fermento
+        match = re.match(
+            r"^(\d+(?:\s+e\s+\d+/\d+)?|\d+/\d+|\d+(?:[.,]\d+)?)\s+(.+?)\s+de\s+(.+)$",
+            value,
+            re.IGNORECASE,
+        )
+
+        if match:
+            quantity = match.group(1)
+            unit = match.group(2)
+            name = match.group(3)
+
+            return {
+                "name": name.strip(),
+                "quantity": quantity.strip(),
+                "unit": unit.strip(),
+                "details": None,
+                "group": group,
+                "optional": optional,
+                "details": parenthetical_details,
+            }
+
+        # Pattern:
+        # quantity + ingredient + details
+        #
+        # Example:
+        # 3 cenouras médias raladas
+        #
+        # Result:
+        # name = cenouras
+        # quantity = 3
+        # details = médias raladas
+        match = re.match(
+            r"^(\d+(?:[.,]\d+)?)\s+(\S+)(?:\s+(.+))?$",
             value,
             re.IGNORECASE,
         )
@@ -133,27 +248,30 @@ class RecipeNormalizer:
         if match:
             quantity = match.group(1)
             name = match.group(2)
+            details = match.group(3)
 
             return {
                 "name": name.strip(),
                 "quantity": quantity.strip(),
+                "unit": None,
+                "details": details.strip() if details else None,
                 "group": group,
+                "optional": optional,
+                "details": parenthetical_details,
             }
 
-        return {
-            "name": value,
-            "quantity": None,
-            "group": group,
-        }
+        # Pattern:
+        # ingredient + "a gosto"
+        #
+        # Example:
+        # sal a gosto
+        match = re.match(
+            r"^(.+?)\s+(a gosto)$",
+            value,
+            re.IGNORECASE,
+        )
 
-    def normalize_ingredient(
-        self,
-        value: str,
-        group: str | None,
-    ) -> dict:
+        if match:
+            name = match.group(1)
+            details = match.group(2)
 
-        return {
-            "name": value.strip(),
-            "quantity": None,
-            "group": group,
-        }

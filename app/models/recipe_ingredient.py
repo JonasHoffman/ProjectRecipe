@@ -1,10 +1,11 @@
-from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column,relationship
+from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.database import Base
 
 
 class RecipeIngredient(Base):
+
     __tablename__ = "recipe_ingredients"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -21,6 +22,27 @@ class RecipeIngredient(Base):
         String(50),
         nullable=True,
     )
+
+    unit: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    details: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    group: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    optional: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+
     recipe: Mapped["Recipe"] = relationship(
         back_populates="ingredients",
     )
