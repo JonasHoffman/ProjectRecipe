@@ -11,6 +11,18 @@ class RecipePersistence:
         self.db = db
 
     def save(self, data: dict) -> Recipe:
+
+        existing_recipe = (
+            self.db.query(Recipe)
+            .filter(
+                Recipe.source_url == data["source_url"]
+            )
+            .first()
+        )
+
+        if existing_recipe:
+            return existing_recipe
+
         recipe = Recipe(
             name=data["name"],
             description=data.get("description"),
