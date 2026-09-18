@@ -21,3 +21,7 @@ class RecipeResponse(RecipeCreate):
     ingredients: list[IngredientResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+class RecipeSearchQuery(BaseModel):
+    ingredients: list[str] = Field(default_factory=list)
+    max_preparation_time: int | None = None

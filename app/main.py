@@ -1,9 +1,9 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
-
+from app.search.recipe import search_recipes
 from app.database.database import SessionLocal
 from app.models.recipe import Recipe
-from app.schemas.recipe import RecipeCreate, RecipeResponse
+from app.schemas.recipe import RecipeCreate, RecipeResponse,RecipeSearchQuery
 from app.models.ingredient import Ingredient
 from app.models.recipe_ingredient import RecipeIngredient
 
@@ -27,19 +27,73 @@ def get_db():
 def health_check():
     return {"status": "ok"}
 
+@app.get("/recipes/search", response_model=list[RecipeResponse])
+def search_recipe_endpoint(
+    query: str,
+    db: Session = Depends(get_db),
+):
+    search_query = RecipeSearchQuery(
+        ingredients=[query]
+    )
+
+    recipes = search_recipes(
+        db,
+        search_query,
+    )
+
+    return [
+        {
+            "id": recipe.id,
+            "name": recipe.name,
+            "description": recipe.description,
+            "preparation_time": recipe.preparation_time,
+            "servings": recipe.servings,
+            "instructions": recipe.instructions,
+            "source_name": recipe.source_name,
+            "source_url": recipe.source_url,
+            "image_url": recipe.image_url,
+            "ingredients": [
+                {
+                    "name": item.ingredient.name,
+                    "quantity": item.quantity,
+                    "unit": item.unit,
+                    "details": item.details,
+                    "group": item.group,
+                    "optional": item.optional,
+                }
+                for item in recipe.ingredients
+            ],
+        }
+        for recipe in recipes
+    
+    ]
 
 @app.get("/recipes", response_model=list[RecipeResponse])
 def list_recipes(
     ingredient: str | None = None,
+    max_preparation_time: int | None = None,
     db: Session = Depends(get_db),
 ):
     query = db.query(Recipe)
 
     if ingredient:
-        query = query.join(RecipeIngredient)
-        query = query.join(Ingredient)
+        ingredients = [
+            item.strip()
+            for item in ingredient.split(",")
+            if item.strip()
+        ]
+
+        for item in ingredients:
+            query = query.filter(
+                Recipe.ingredients.any(
+                    RecipeIngredient.ingredient.has(
+                        Ingredient.name.ilike(f"%{item}%")
+                    )
+                )
+            )
+    if max_preparation_time is not None:
         query = query.filter(
-            Ingredient.name.ilike(f"%{ingredient}%")
+            Recipe.preparation_time <= max_preparation_time
         )
 
     recipes = query.all()
@@ -119,3 +173,4 @@ def create_recipe(
     db.refresh(recipe)
 
     return recipe
+
