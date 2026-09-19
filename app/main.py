@@ -6,6 +6,7 @@ from app.models.recipe import Recipe
 from app.schemas.recipe import RecipeCreate, RecipeResponse,RecipeSearchQuery
 from app.models.ingredient import Ingredient
 from app.models.recipe_ingredient import RecipeIngredient
+from app.search.service import RecipeSearchService
 
 app = FastAPI(
     title="Recipe AI",
@@ -119,7 +120,46 @@ def list_recipes(
         }
         for recipe in recipes
     ]
+@app.get(
+    "/recipes/natural-search",
+    response_model=list[RecipeResponse],
+)
+def natural_search_recipes(
+    query: str,
+    db: Session = Depends(get_db),
+):
+    service = RecipeSearchService()
 
+    recipes = service.search(
+        query,
+        db,
+    )
+
+    return [
+        {
+            "id": recipe.id,
+            "name": recipe.name,
+            "description": recipe.description,
+            "preparation_time": recipe.preparation_time,
+            "servings": recipe.servings,
+            "instructions": recipe.instructions,
+            "source_name": recipe.source_name,
+            "source_url": recipe.source_url,
+            "image_url": recipe.image_url,
+            "ingredients": [
+                {
+                    "name": item.ingredient.name,
+                    "quantity": item.quantity,
+                    "unit": item.unit,
+                    "details": item.details,
+                    "group": item.group,
+                    "optional": item.optional,
+                }
+                for item in recipe.ingredients
+            ],
+        }
+        for recipe in recipes
+    ]
 @app.get("/recipes/{recipe_id}", response_model=RecipeResponse)
 def get_recipe(
     recipe_id: int,

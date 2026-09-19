@@ -129,22 +129,23 @@ class TudoGostosoParser(RecipeParser):
                 and "recipe-ingredients-subtitle"
                 in element.get("class", [])
             ):
+                group_name = element.get_text(
+                    " ",
+                    strip=True
+                ).rstrip(":")
+
+                if len(group_name) > 100:
+                    current_group = None
+                    continue
 
                 current_group = {
-
-                    "group": element.get_text(
-                        " ",
-                        strip=True
-                    ).rstrip(":"),
-
+                    "group": group_name,
                     "items": [],
-
                 }
 
                 groups.append(
                     current_group
                 )
-
             elif (
                 element.name == "span"
                 and "recipe-ingredients-item-label"

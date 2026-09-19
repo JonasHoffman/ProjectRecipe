@@ -90,6 +90,91 @@ def test_ingredients():
                 "optional": False,
             },
         },
+        {
+            "input": "1 colher (sopa) colorau",
+            "group": None,
+            "expected": {
+                "name": "colorau",
+                "quantity": "1",
+                "unit": "colher (sopa)",
+                "details": None,
+                "group": None,
+                "optional": False,
+            },
+        },
+        {
+            "input": "1 ou 2 laranjas",
+            "group": None,
+            "expected": {
+                "name": "laranjas",
+                "quantity": "1 ou 2",
+                "unit": None,
+                "details": None,
+                "group": None,
+                "optional": False,
+            },
+        },
+        {
+            "input": "40 ml de de pinga",
+            "group": None,
+            "expected": {
+                "name": "pinga",
+                "quantity": "40",
+                "unit": "ml",
+                "details": None,
+                "group": None,
+                "optional": False,
+            },
+        },
+        {
+            "input": "3 peitos de frango cortados em cubos",
+            "group": None,
+            "expected": {
+                "name": "frango",
+                "quantity": "3",
+                "unit": "peitos",
+                "details": "cortados em cubos",
+                "group": None,
+                "optional": False,
+            },
+        },
+        {
+            "input": "1 colher (sopa) de amido de milho, dissolvido em 50 ml de água",
+            "group": None,
+            "expected": {
+                "name": "amido de milho",
+                "quantity": "1",
+                "unit": "colher (sopa)",
+                "details": "dissolvido em 50 ml de água",
+                "group": None,
+                "optional": False,
+            },
+        },
+        {
+            "input": "1 dente de alho (pequeno) bem espremido",
+            "group": None,
+            "expected": {
+                "name": "alho",
+                "quantity": "1",
+                "unit": "dente",
+                "details": "(pequeno) bem espremido",
+                "group": None,
+                "optional": False,
+            },
+        },
+        {
+            "input": "4 batatas grande descascada em rodelas de 0,5 centímetro de espessura",
+            "group": None,
+            "expected": {
+                "name": "batatas",
+                "quantity": "4",
+                "unit": None,
+                "details": "grande descascada em rodelas de 0,5 centímetro de espessura",
+                "group": None,
+                "optional": False,
+            },
+        },
+        
     ]
 
     for case in cases:
