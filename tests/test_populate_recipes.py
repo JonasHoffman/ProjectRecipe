@@ -17,7 +17,22 @@ RECIPES = [
     'https://www.tudogostoso.com.br/receita/301775-brownie-de-chocolate-na-air-fryer.html',
     'https://www.tudogostoso.com.br/receita/109052-file-de-peixe-assado.html',
     'https://www.tudogostoso.com.br/receita/2998-feijoada.html',
-    'https://www.tudogostoso.com.br/receita/2085-yakissoba-da-casa.html'
+    'https://www.tudogostoso.com.br/receita/2085-yakissoba-da-casa.html',
+    "https://www.tudogostoso.com.br/receita/309779-bolo-de-chocolate-simples.html",
+    "https://www.tudogostoso.com.br/receita/21560-bolo-de-fuba-simples.html",
+    "https://www.tudogostoso.com.br/receita/64879-almondegas.html",
+    "https://www.tudogostoso.com.br/receita/53915-estrogonofe-de-carne-simples.html",
+    "https://www.tudogostoso.com.br/receita/10254-fricasse-de-frango.html",
+    "https://www.tudogostoso.com.br/receita/897-frango-xadrez.html",
+    "https://www.tudogostoso.com.br/receita/162495-frango-desfiado-na-panela-de-pressao.html",
+    "https://www.tudogostoso.com.br/receita/30068-file-de-frango-empanado.html",
+    "https://www.tudogostoso.com.br/receita/112-bobo-de-camarao.html",
+    "https://www.tudogostoso.com.br/receita/133817-moqueca-de-peixe-facil.html",
+    "https://www.tudogostoso.com.br/receita/44199-molho-branco-simples.html",
+    "https://www.tudogostoso.com.br/receita/59-pure-de-batata.html",
+    "https://www.tudogostoso.com.br/receita/82681-massa-de-panqueca.html",
+    "https://www.tudogostoso.com.br/receita/13110-panqueca-americana.html",
+    "https://www.tudogostoso.com.br/receita/13953-bolo-de-laranja.html",
 
 ]
 

@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 from app.search.recipe import search_recipes
 from app.database.database import SessionLocal
 from app.models.recipe import Recipe
-from app.schemas.recipe import RecipeCreate, RecipeResponse,RecipeSearchQuery
+from app.schemas.recipe import RecipeCreate, RecipeResponse,RecipeSearchQuery,RecipeSearchResult,RecipeRecommendationResponse
 from app.models.ingredient import Ingredient
 from app.models.recipe_ingredient import RecipeIngredient
 from app.search.service import RecipeSearchService
+from app.ai.recommender import RecipeRecommender
 
 app = FastAPI(
     title="Recipe AI",
@@ -69,13 +70,16 @@ def search_recipe_endpoint(
     
     ]
 
-@app.get("/recipes", response_model=list[RecipeResponse])
+@app.get(
+    "/recipes",
+    response_model=list[RecipeResponse],
+)
 def list_recipes(
     ingredient: str | None = None,
     max_preparation_time: int | None = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(Recipe)
+    ingredients = []
 
     if ingredient:
         ingredients = [
@@ -84,55 +88,14 @@ def list_recipes(
             if item.strip()
         ]
 
-        for item in ingredients:
-            query = query.filter(
-                Recipe.ingredients.any(
-                    RecipeIngredient.ingredient.has(
-                        Ingredient.name.ilike(f"%{item}%")
-                    )
-                )
-            )
-    if max_preparation_time is not None:
-        query = query.filter(
-            Recipe.preparation_time <= max_preparation_time
-        )
+    search_query = RecipeSearchQuery(
+        ingredients=ingredients,
+        max_preparation_time=max_preparation_time,
+    )
 
-    recipes = query.all()
-
-    return [
-        {
-            "id": recipe.id,
-            "name": recipe.name,
-            "description": recipe.description,
-            "preparation_time": recipe.preparation_time,
-            "servings": recipe.servings,
-            "instructions": recipe.instructions,
-            "source_name": recipe.source_name,
-            "source_url": recipe.source_url,
-            "image_url": recipe.image_url,
-            "ingredients": [
-                {
-                    "name": item.ingredient.name,
-                    "quantity": item.quantity,
-                }
-                for item in recipe.ingredients
-            ],
-        }
-        for recipe in recipes
-    ]
-@app.get(
-    "/recipes/natural-search",
-    response_model=list[RecipeResponse],
-)
-def natural_search_recipes(
-    query: str,
-    db: Session = Depends(get_db),
-):
-    service = RecipeSearchService()
-
-    recipes = service.search(
-        query,
+    recipes = search_recipes(
         db,
+        search_query,
     )
 
     return [
@@ -160,6 +123,57 @@ def natural_search_recipes(
         }
         for recipe in recipes
     ]
+
+@app.get(
+    "/recipes/natural-search",
+    response_model=list[RecipeSearchResult],
+)
+def natural_search_recipes(
+    query: str,
+    db: Session = Depends(get_db),
+):
+    service = RecipeSearchService()
+
+    recipes = service.search(
+        query,
+        db,
+    )
+
+    return recipes
+
+@app.get(
+    "/recipes/recommend",
+    response_model=RecipeRecommendationResponse,
+)
+def recommend_recipes(
+    query: str,
+    db: Session = Depends(get_db),
+):
+    service = RecipeSearchService()
+
+    recipes = service.search(
+        query,
+        db,
+    )
+
+    recipe_data = [
+        {
+            "id": recipe.id,
+            "name": recipe.name,
+            "description": recipe.description,
+            "preparation_time": recipe.preparation_time,
+            "servings": recipe.servings,
+        }
+        for recipe in recipes
+    ]
+
+    recommender = RecipeRecommender()
+
+    return recommender.recommend(
+        query,
+        recipe_data,
+    )
+
 @app.get("/recipes/{recipe_id}", response_model=RecipeResponse)
 def get_recipe(
     recipe_id: int,
@@ -187,6 +201,10 @@ def get_recipe(
             {
                 "name": item.ingredient.name,
                 "quantity": item.quantity,
+                "unit": item.unit,
+                "details": item.details,
+                "group": item.group,
+                "optional": item.optional,
             }
             for item in recipe.ingredients
         ],
