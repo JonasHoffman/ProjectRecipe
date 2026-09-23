@@ -44,3 +44,14 @@ class RecipeRecommendation(BaseModel):
 class RecipeRecommendationResponse(BaseModel):
     message: str
     recommendations: list[RecipeRecommendation]
+
+class RecipeSelection(BaseModel):
+    recipe_id: int
+
+class RecipeSelectionRequest(BaseModel):
+    query: str
+    recipe_ids: list[int]
+
+
+class RecipeSelection(BaseModel):
+    recipe_id: int

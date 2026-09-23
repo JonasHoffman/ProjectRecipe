@@ -1,9 +1,10 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from app.search.recipe import search_recipes
+from app.ai.selector import RecipeSelector
 from app.database.database import SessionLocal
 from app.models.recipe import Recipe
-from app.schemas.recipe import RecipeCreate, RecipeResponse,RecipeSearchQuery,RecipeSearchResult,RecipeRecommendationResponse
+from app.schemas.recipe import RecipeCreate, RecipeResponse,RecipeSearchQuery,RecipeSearchResult,RecipeRecommendationResponse,RecipeSelection,RecipeSelectionRequest
 from app.models.ingredient import Ingredient
 from app.models.recipe_ingredient import RecipeIngredient
 from app.search.service import RecipeSearchService
@@ -173,6 +174,55 @@ def recommend_recipes(
         query,
         recipe_data,
     )
+@app.post(
+    "/recipes/select",
+    response_model=RecipeResponse,
+)
+def select_recipe(
+    selection: RecipeSelectionRequest,
+    db: Session = Depends(get_db),
+):
+    selector = RecipeSelector()
+
+    result = selector.select(
+        selection.query,
+        selection.recipe_ids,
+    )
+
+    recipe = (
+        db.query(Recipe)
+        .filter(Recipe.id == result.recipe_id)
+        .first()
+    )
+
+    if not recipe:
+        raise HTTPException(
+            status_code=404,
+            detail="Recipe not found",
+        )
+
+    return {
+        "id": recipe.id,
+        "name": recipe.name,
+        "description": recipe.description,
+        "preparation_time": recipe.preparation_time,
+        "servings": recipe.servings,
+        "instructions": recipe.instructions,
+        "source_name": recipe.source_name,
+        "source_url": recipe.source_url,
+        "image_url": recipe.image_url,
+        "ingredients": [
+            {
+                "name": item.ingredient.name,
+                "quantity": item.quantity,
+                "unit": item.unit,
+                "details": item.details,
+                "group": item.group,
+                "optional": item.optional,
+            }
+            for item in recipe.ingredients
+        ],
+    }
 
 @app.get("/recipes/{recipe_id}", response_model=RecipeResponse)
 def get_recipe(
