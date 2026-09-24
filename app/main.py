@@ -9,6 +9,8 @@ from app.models.ingredient import Ingredient
 from app.models.recipe_ingredient import RecipeIngredient
 from app.search.service import RecipeSearchService
 from app.ai.recommender import RecipeRecommender
+from app.schemas.telegram import TelegramUpdate
+from app.integrations.telegram.bot import TelegramBot
 
 app = FastAPI(
     title="Recipe AI",
@@ -281,4 +283,35 @@ def create_recipe(
     db.refresh(recipe)
 
     return recipe
+
+
+
+@app.post("/telegram/webhook")
+def telegram_webhook(
+    update: TelegramUpdate,
+    db: Session = Depends(get_db),
+):
+    if not update.message:
+        return {
+            "ok": True,
+        }
+
+    if not update.message.text:
+        return {
+            "ok": True,
+        }
+
+    bot = TelegramBot()
+
+    bot.send_message(
+        chat_id=update.message.chat.id,
+        text=f"You said: {update.message.text}",
+    )
+
+    return {
+        "ok": True,
+    }
+
+
+
 
