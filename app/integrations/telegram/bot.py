@@ -62,3 +62,23 @@ class TelegramBot:
         response.raise_for_status()
 
         return response.json()
+
+    def send_photo(
+        self,
+        chat_id: int,
+        photo: str,
+        caption: str | None = None,
+    ):
+        response = httpx.post(
+            f"{self.base_url}/sendPhoto",
+            json={
+                "chat_id": chat_id,
+                "photo": photo,
+                "caption": caption,
+            },
+            timeout=30.0,
+        )
+
+        response.raise_for_status()
+
+        return response.json()
