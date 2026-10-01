@@ -9,8 +9,13 @@ class RecipeSelector:
     def select(
         self,
         user_query: str,
-        recipe_ids: list[int],
+        recipes: list[dict],
     ) -> RecipeSelection:
+        recipe_ids = [
+            recipe["id"]
+            for recipe in recipes
+        ]
+
         prompt = f"""
 Select one recipe based on the user's request.
 
@@ -18,14 +23,15 @@ Rules:
 - Select only one recipe.
 - The selected recipe ID must be one of the provided recipe IDs.
 - Never invent a recipe ID.
+- Use the recipe information to understand the user's preference.
 - If the user refers to "first", "second", etc., use the position in the provided list.
 - Return only data that belongs to the provided schema.
 
 User request:
 {user_query}
 
-Available recipe IDs in order:
-{recipe_ids}
+Available recipes:
+{recipes}
 """
 
         interaction = self.client.interactions.create(
@@ -43,6 +49,8 @@ Available recipe IDs in order:
         )
 
         if selection.recipe_id not in recipe_ids:
-            raise ValueError("Gemini selected an unavailable recipe.")
+            raise ValueError(
+                "Gemini selected an unavailable recipe."
+            )
 
         return selection

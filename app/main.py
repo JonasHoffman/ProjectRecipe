@@ -419,7 +419,9 @@ def process_telegram_message(update: TelegramUpdate):
                     "• Quero uma receita com frango em até 30 minutos\n\n"
                     "Depois que eu encontrar algumas opções, "
                     "você pode escolher dizendo:\n"
-                    '"quero a primeira" ou "quero a segunda".'
+                    '"quero a primeira" ou "quero a segunda".\n\n'
+                    "Você também pode fazer uma escolha por característica, "
+                    'como "quero a mais rápida".'
                 ),
             )
             return
@@ -438,7 +440,9 @@ def process_telegram_message(update: TelegramUpdate):
                     "você pode escolher uma delas:\n"
                     '• "quero a primeira"\n'
                     '• "quero a segunda"\n'
-                    '• "quero a terceira"\n\n'
+                    '• "quero a terceira"\n'
+                    '• "quero a mais rápida"\n'
+                    '• "quero a que leva menos tempo"\n\n'
                     "Comandos disponíveis:\n"
                     "/start - iniciar o bot\n"
                     "/help - mostrar esta ajuda\n"
@@ -469,18 +473,24 @@ def process_telegram_message(update: TelegramUpdate):
             user_query
         )
 
+        # Deterministic selection
         if recipe_ids and recipe_position is not None:
-            try:
-                recipe_id = recipe_ids[recipe_position - 1]
-            except IndexError:
-                bot.send_message(
-                    chat_id=chat_id,
-                    text=(
-                        "Não existe uma receita nessa posição. "
-                        "Escolha uma das opções que enviei."
-                    ),
-                )
-                return
+            if recipe_position == -1:
+                recipe_id = recipe_ids[-1]
+            else:
+                try:
+                    recipe_id = recipe_ids[
+                        recipe_position - 1
+                    ]
+                except IndexError:
+                    bot.send_message(
+                        chat_id=chat_id,
+                        text=(
+                            "Não existe uma receita nessa posição. "
+                            "Escolha uma das opções que enviei."
+                        ),
+                    )
+                    return
 
             recipe = (
                 db.query(Recipe)
@@ -507,6 +517,99 @@ def process_telegram_message(update: TelegramUpdate):
 
             return
 
+        # Semantic selection
+        if recipe_ids:
+            available_recipes = (
+                db.query(Recipe)
+                .filter(Recipe.id.in_(recipe_ids))
+                .all()
+            )
+
+            if not available_recipes:
+                telegram_recipe_options.pop(
+                    chat_id,
+                    None,
+                )
+
+                bot.send_message(
+                    chat_id=chat_id,
+                    text=(
+                        "As opções anteriores não estão mais disponíveis. "
+                        "Faça uma nova busca."
+                    ),
+                )
+                return
+
+            recipe_data = [
+                {
+                    "id": recipe.id,
+                    "name": recipe.name,
+                    "description": recipe.description,
+                    "preparation_time": recipe.preparation_time,
+                    "servings": recipe.servings,
+                }
+                for recipe in available_recipes
+            ]
+
+            selector = RecipeSelector()
+
+            try:
+                selection = selector.select(
+                    user_query,
+                    recipe_data,
+                )
+            except APIError as error:
+                if error.code == 429:
+                    bot.send_message(
+                        chat_id=chat_id,
+                        text=(
+                            "⚠️ O serviço de IA atingiu o limite de uso "
+                            "disponível no momento.\n\n"
+                            "Tente novamente mais tarde."
+                        ),
+                    )
+                    return
+
+                raise
+
+            except ValueError:
+                bot.send_message(
+                    chat_id=chat_id,
+                    text=(
+                        "Não consegui identificar uma receita "
+                        "com base no seu pedido."
+                    ),
+                )
+                return
+
+            recipe = (
+                db.query(Recipe)
+                .filter(
+                    Recipe.id == selection.recipe_id
+                )
+                .first()
+            )
+
+            if not recipe:
+                bot.send_message(
+                    chat_id=chat_id,
+                    text="Não encontrei a receita selecionada.",
+                )
+                return
+
+            telegram_recipe_options.pop(
+                chat_id,
+                None,
+            )
+
+            bot.send_message(
+                chat_id=chat_id,
+                text=format_recipe_for_telegram(recipe),
+            )
+
+            return
+
+        # New recipe search
         service = RecipeSearchService()
 
         try:
@@ -633,7 +736,10 @@ def process_telegram_message(update: TelegramUpdate):
             chat_id=chat_id,
             text=(
                 "Qual você gostaria de preparar?\n\n"
-                'Você pode dizer, por exemplo: "quero a segunda".'
+                "Você pode escolher pelo número ou "
+                "por uma característica.\n\n"
+                'Exemplo: "quero a segunda" ou '
+                '"quero a mais rápida".'
             ),
         )
 
