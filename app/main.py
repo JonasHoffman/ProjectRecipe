@@ -407,8 +407,9 @@ def process_telegram_message(update: TelegramUpdate):
 
         if message.voice:
             print("VOICE RECEIVED")
+            print("UPDATE ID:", update.update_id)
             print("MESSAGE ID:", message.message_id)
-            print("file_id:", message.voice.file_id)
+            print("FILE ID:", message.voice.file_id)
 
             file_info = bot.get_file(
                 message.voice.file_id
@@ -434,12 +435,13 @@ def process_telegram_message(update: TelegramUpdate):
             print("TRANSCRIPTION:")
             print(transcription)
 
-            return
+            user_query = transcription
 
-        if not message.text:
-            return
+        elif message.text:
+            user_query = message.text.strip()
 
-        user_query = message.text.strip()
+        else:
+            return
 
         if user_query.lower() == "/start":
             bot.send_message(
@@ -780,7 +782,7 @@ def process_telegram_message(update: TelegramUpdate):
 
     finally:
         db.close()
-
+        
 @app.post("/telegram/webhook")
 def telegram_webhook(
     update: TelegramUpdate,
