@@ -45,6 +45,26 @@ class TelegramBot:
 
         return response.json()
 
+    def get_file(self, file_id: str):
+        response = httpx.get(
+            f"{self.base_url}/getFile",
+            params={"file_id": file_id},
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def download_file(self, file_path: str, destination: str):
+        response = httpx.get(
+            f"https://api.telegram.org/file/bot{self.token}/{file_path}",
+            timeout=30.0,
+        )
+        response.raise_for_status()
+
+        with open(destination, "wb") as file:
+            file.write(response.content)
+
+        return destination
+
     def send_message(
         self,
         chat_id: int,

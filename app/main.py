@@ -12,6 +12,7 @@ from app.ai.recommender import RecipeRecommender
 from app.schemas.telegram import TelegramUpdate
 from app.integrations.telegram.bot import TelegramBot
 from google.genai.errors import APIError
+from app.audio.transcriber import SpeechToText
 
 
 app = FastAPI(
@@ -398,13 +399,47 @@ def process_telegram_message(update: TelegramUpdate):
     try:
         message = update.message
 
-        if not message or not message.text:
+        if not message:
             return
 
         chat_id = message.chat.id
-        user_query = message.text.strip()
-
         bot = TelegramBot()
+
+        if message.voice:
+            print("VOICE RECEIVED")
+            print("MESSAGE ID:", message.message_id)
+            print("file_id:", message.voice.file_id)
+
+            file_info = bot.get_file(
+                message.voice.file_id
+            )
+
+            print("file_info:", file_info)
+
+            file_path = file_info["result"]["file_path"]
+
+            audio_path = "voice.oga"
+
+            bot.download_file(
+                file_path,
+                audio_path,
+            )
+
+            transcriber = SpeechToText()
+
+            transcription = transcriber.transcribe(
+                audio_path
+            )
+
+            print("TRANSCRIPTION:")
+            print(transcription)
+
+            return
+
+        if not message.text:
+            return
+
+        user_query = message.text.strip()
 
         if user_query.lower() == "/start":
             bot.send_message(
