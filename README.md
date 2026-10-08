@@ -265,6 +265,9 @@ Estrutura do projeto
 
 A estrutura principal da aplicação é:
 
+
+
+```text
 ProjectRecipe/
 │
 ├── app/
@@ -322,13 +325,13 @@ ProjectRecipe/
 │   └── main.py
 │
 ├── alembic/
-│
 ├── tests/
-│
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
 └── README.md
+
+```text
 
 Os diretórios __pycache__ foram omitidos por serem arquivos gerados automaticamente pelo Python.
 
