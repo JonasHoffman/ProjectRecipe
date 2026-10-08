@@ -406,17 +406,12 @@ def process_telegram_message(update: TelegramUpdate):
         bot = TelegramBot()
 
         if message.voice:
-            print("VOICE RECEIVED")
-            print("UPDATE ID:", update.update_id)
-            print("MESSAGE ID:", message.message_id)
-            print("FILE ID:", message.voice.file_id)
-
+            
             file_info = bot.get_file(
                 message.voice.file_id
             )
 
-            print("file_info:", file_info)
-
+            
             file_path = file_info["result"]["file_path"]
 
             audio_path = "voice.oga"
@@ -432,9 +427,7 @@ def process_telegram_message(update: TelegramUpdate):
                 audio_path
             )
 
-            print("TRANSCRIPTION:")
-            print(transcription)
-
+            
             user_query = transcription
 
         elif message.text:
