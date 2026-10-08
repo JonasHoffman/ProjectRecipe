@@ -331,7 +331,7 @@ ProjectRecipe/
 ├── requirements.txt
 └── README.md
 
-```text
+```
 
 Os diretórios __pycache__ foram omitidos por serem arquivos gerados automaticamente pelo Python.
 
